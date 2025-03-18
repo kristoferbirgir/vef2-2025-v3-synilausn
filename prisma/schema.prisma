@@ -1,0 +1,57 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/**
+ * create a prisma schema from the following
+ * CREATE TABLE public.categories (
+ * id serial primary key,
+ * slug CHARACTER VARYING(128) NOT NULL UNIQUE,
+ * name CHARACTER VARYING(64) NOT NULL UNIQUE
+ * );
+ * CREATE TABLE public.questions (
+ * id serial primary key,
+ * text CHARACTER VARYING(1024) NOT NULL,
+ * category_id integer NOT NULL REFERENCES categories(id)
+ * );
+ * CREATE TABLE public.answers (
+ * id serial primary key,
+ * text CHARACTER VARYING(1024) NOT NULL,
+ * question_id integer NOT NULL REFERENCES questions(id),
+ * correct BOOLEAN DEFAULT false
+ * );
+ */
+
+model Category {
+  id        Int        @id @default(autoincrement())
+  slug      String     @unique
+  name      String     @unique
+  questions Question[]
+}
+
+model Answer {
+  id         Int      @id @default(autoincrement())
+  text       String
+  questionId Int
+  question   Question @relation(fields: [questionId], references: [id])
+  correct    Boolean  @default(false)
+}
+
+model Question {
+  id         Int      @id @default(autoincrement())
+  text       String
+  categoryId Int
+  category   Category @relation(fields: [categoryId], references: [id])
+  answers    Answer[]
+}
