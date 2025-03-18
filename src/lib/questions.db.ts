@@ -128,14 +128,13 @@ export class QuestionsDbClient implements IQuestions {
     let updatedQuestion;
     try {
       updatedQuestion = await this.prisma.question.update({
-        where: {
-          id,
-        },
+        where: { id },
         data: {
           text: question.text,
           categoryId: question.categoryId,
           answers: {
-            create: question.answers,
+            deleteMany: {}, // Delete all existing answers for this question.
+            create: question.answers, // Create new answers.
           },
         },
         include: {
@@ -147,7 +146,6 @@ export class QuestionsDbClient implements IQuestions {
       this.logger.error('error updating question', id, question, error);
       return { ok: false, error: error as Error };
     }
-
     return { ok: true, value: updatedQuestion };
   }
 
