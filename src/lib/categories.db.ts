@@ -75,7 +75,7 @@ export class CategoriesDbClient implements ICategory {
   ): Promise<Result<CategoryCreateResult>> {
     let categoryExists;
     try {
-      // make sure we are not breaking the unique constraint
+      // Make sure we are not breaking the unique constraint.
       categoryExists = await this.prisma.category.findFirst({
         where: {
           name: category.name,
@@ -90,9 +90,6 @@ export class CategoriesDbClient implements ICategory {
       return { ok: false, error: error as Error };
     }
 
-    // If the category already exists, we return it along with a specific reason
-    // so the caller can decide what to do with it. This is not as elegant as
-    // doing this all in a single validation, but here we are.
     if (categoryExists) {
       const result: CategoryCreateResult = {
         created: false,
@@ -104,16 +101,6 @@ export class CategoriesDbClient implements ICategory {
 
     const slug = slugify(category.name);
 
-    // Here we run into a problem, if we have a slug that is not valid
-    // how should we treat that?
-    // E.g. we say "x  " is a valid category name, but it will be slugified
-    // to "x" which is too short. Even if we fix that issue we'd still have
-    // the potential for slugs to collide.
-    // We've separated the slugify logic from the
-    // validation (in the route) and now we need to handle it here.
-    // This creates an inconsistency in our structure that maybe we should
-    // address in a different way. But, for now, let's just return an error and
-    // piggyback on the error handling we created for an existing category.
     if (!slug) {
       const result: CategoryCreateResult = {
         created: false,
@@ -125,8 +112,6 @@ export class CategoriesDbClient implements ICategory {
 
     let savedCategory;
     try {
-      // TODO this will fail on a slug collision which is something we should
-      // handle but it should take into all above as well.
       savedCategory = await this.prisma.category.create({
         data: {
           name: category.name,
@@ -149,9 +134,6 @@ export class CategoriesDbClient implements ICategory {
     slug: Slug,
     category: CategoryToCreate,
   ): Promise<Result<Category | null>> {
-    // TODO given the issues in createCategory, we just do the simples thing
-    // here and return null on any error.
-    // We should fix together with the above.
     let categoryExists;
     try {
       categoryExists = await this.prisma.category.findFirst({
@@ -171,7 +153,6 @@ export class CategoriesDbClient implements ICategory {
     const newSlug = slugify(category.name);
 
     if (!newSlug) {
-      // TODO we should handle this better! Pretty wild
       return { ok: false, error: new Error('invalid slug') };
     }
 
@@ -210,6 +191,18 @@ export class CategoriesDbClient implements ICategory {
 
     if (!categoryExists) {
       return { ok: true, value: false };
+    }
+
+    try {
+      // Delete all questions (and their answers) that belong to this category.
+      await this.prisma.question.deleteMany({
+        where: {
+          categoryId: categoryExists.id,
+        },
+      });
+    } catch (error) {
+      this.logger.error('error deleting questions for category', slug, error);
+      return { ok: false, error: error as Error };
     }
 
     try {
