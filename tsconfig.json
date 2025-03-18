@@ -9,8 +9,8 @@
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx",
     "outDir": "./dist",
-    "rootDir": "./src", 
-    "moduleResolution": "node",
+    "rootDir": "./src",
+    "moduleResolution": "NodeNext",
     "resolveJsonModule": true
   },
   "include": ["src"]
